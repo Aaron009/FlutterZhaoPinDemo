@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -19,10 +20,27 @@ class MessageHistoryPage extends StatefulWidget {
 
 class _MessageHistoryPageState extends State<MessageHistoryPage> {
   TextEditingController _controller = TextEditingController();
+  ScrollController _scrollController = ScrollController();
   WebSocketChannel channel =
       IOWebSocketChannel.connect('ws://echo.websocket.org');
 
   List<Message> _msgList = List();
+
+  void _addMessage(Message msg) {
+    _msgList.add(msg);
+    _scrollEnd();
+  }
+
+  void _scrollEnd() {
+    Future.delayed(Duration(milliseconds: 2000), () {
+      _scrollController.animateTo(
+          (_msgList.length + 1 / _msgList.length) *
+              _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut);
+    });
+  }
+
 
   @override
   void initState() {
@@ -30,16 +48,18 @@ class _MessageHistoryPageState extends State<MessageHistoryPage> {
     channel.stream.listen((msgString) {
       Message msg = Message.fromJson(jsonDecode(msgString));
       msg.type = 'receive';
-      setState(() => _msgList.add(msg));
+      setState(() => _addMessage(msg));
     });
+
     Message msg = widget.message;
     msg.type = 'receive';
-    _msgList.add(msg);
+    _addMessage(msg);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         elevation: 0.0,
         centerTitle: true,
@@ -48,45 +68,53 @@ class _MessageHistoryPageState extends State<MessageHistoryPage> {
           style: new TextStyle(fontSize: 20.0, color: Colors.white),
         ),
       ),
-      body: Container(
-        // color: Colors.grey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Flexible(
-              fit: FlexFit.tight,
-              child: new ListView.builder(
-                  itemCount: _msgList.length, // 数据长度
-                  itemBuilder: (context, index) => _makeMessageElement(index)),
-            ),
-            SafeArea(
-              child: Padding(
-                padding: EdgeInsets.only(left: 10.0, right: 10.0),
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        autofocus: true,
-                        decoration: new InputDecoration(
-                          hintText: '发送一条消息',
+      body: GestureDetector(
+        onTap: () {
+          // 收起键盘
+          FocusScope.of(context).requestFocus(FocusNode());
+        },
+        child: Container(
+          // color: Colors.grey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Flexible(
+                fit: FlexFit.tight,
+                child: new ListView.builder(
+                    controller: _scrollController,
+                    itemCount: _msgList.length, // 数据长度
+                    itemBuilder: (context, index) => _makeMessageElement(index)),
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.only(left: 10.0, right: 10.0),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: TextField(
+                          controller: _controller,
+                          autofocus: true,
+                          decoration: new InputDecoration(
+                            hintText: '发送一条消息',
+                          ),
+                          onTap: _scrollEnd,
                         ),
                       ),
-                    ),
-                    RaisedButton(
-                      color: Config.GLOBAL_COLOR,
-                      child: Text(
-                        '发送',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      onPressed: _sendMessage,
-                    )
-                  ],
+                      RaisedButton(
+                        color: Config.GLOBAL_COLOR,
+                        child: Text(
+                          '发送',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        onPressed: _sendMessage,
+                      )
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        ), //          child: Row(
+            ],
+          ), //          child: Row(
+        ),
       ),
     );
   }
@@ -101,6 +129,7 @@ class _MessageHistoryPageState extends State<MessageHistoryPage> {
 
       setState(() => _msgList.add(msg));
       channel.sink.add(jsonEncode(msg.toJson()));
+      _controller.text = "";
     }
   }
 
