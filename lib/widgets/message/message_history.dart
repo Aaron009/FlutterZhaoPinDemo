@@ -25,6 +25,7 @@ class _MessageHistoryPageState extends State<MessageHistoryPage> {
       IOWebSocketChannel.connect('ws://echo.websocket.org');
 
   List<Message> _msgList = List();
+  Timer _timer;
 
   void _addMessage(Message msg) {
     _msgList.add(msg);
@@ -32,7 +33,19 @@ class _MessageHistoryPageState extends State<MessageHistoryPage> {
   }
 
   void _scrollEnd() {
-    Future.delayed(Duration(milliseconds: 2000), () {
+//    Future.delayed(Duration(milliseconds: 2000), () {
+//      print("当前消息数量 " +  _msgList.length.toString());
+//      _scrollController.animateTo(
+//          (_msgList.length + 1 / _msgList.length) *
+//              _scrollController.position.maxScrollExtent,
+//          duration: const Duration(milliseconds: 300),
+//          curve: Curves.easeOut);
+//    });
+    if(_timer != null) {
+      _timer.cancel();
+    }
+    _timer = Timer(Duration(milliseconds: 17), () {
+      print("当前消息数量 " +  _msgList.length.toString());
       _scrollController.animateTo(
           (_msgList.length + 1 / _msgList.length) *
               _scrollController.position.maxScrollExtent,
