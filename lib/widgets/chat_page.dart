@@ -41,6 +41,7 @@ class _ChatPageState extends State<ChatPage>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return new Scaffold(
       appBar: new AppBar(
         elevation: 0.0,

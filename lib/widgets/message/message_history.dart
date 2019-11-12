@@ -140,7 +140,8 @@ class _MessageHistoryPageState extends State<MessageHistoryPage> {
         ..message = _controller.text
         ..type = 'send';
 
-      setState(() => _msgList.add(msg));
+//      setState(() => _msgList.add(msg));
+      _msgList.add(msg);
       channel.sink.add(jsonEncode(msg.toJson()));
       _controller.text = "";
     }
